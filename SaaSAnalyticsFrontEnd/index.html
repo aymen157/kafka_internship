@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mouse Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: rgb(0, 0, 30);
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: space-around;
+    }
+    canvas {
+      max-width: 400px;
+      max-height: 300px;
+    }
+    h1 {
+      color: turquoise;
+    }
+  </style>
+</head>
+<body>
+  <h1>User Mouse Analytics Dashboard</h1>
+  <div class="container">
+    <canvas id="chart1"></canvas>
+    <canvas id="chart2"></canvas>
+    <canvas id="chart3"></canvas>
+    <canvas id="chart4"></canvas>
+    <canvas id="chart5"></canvas>
+    <canvas id="chart6"></canvas>
+  </div>
+
+  <script>
+    async function getJson(url) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error fetching JSON:', error);
+      }
+    }
+
+    logic();
+    async function logic(){
+
+      var jsonData = await getJson("../DumpedDataForAnalysis/user_mouse_data.json")
+
+    // Example data processing based on your patterns
+    const dates = jsonData.map(d => new Date(d.date).toLocaleTimeString());
+    const hoverDurations = jsonData.map(d => d.hoverDuration);
+    const xPositions = jsonData.map(d => d.x);
+    const yPositions = jsonData.map(d => d.y);
+    const buttons = jsonData.map(d => d.button);
+    const eventTypes = jsonData.map(d => d.eventType);
+
+    // Chart.js Configuration for 6 charts
+    function createChart(ctx, type, labels, data, label) {
+      new Chart(ctx, {
+        type: type,
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: data,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, grid: {color: 'gray'}, ticks: {color: 'white'} },
+            x: { grid: {color: 'gray'}, ticks: {color: 'white'} }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: 'white' // legend text color
+              }
+            },
+            title: {
+              display: false,
+              text: 'Chart Title',
+              color: 'white' // title text color
+            }
+          }
+        }
+      });
+    }
+
+    // 1. Hover Duration Over Time
+    createChart(document.getElementById('chart1'), 'line', dates, hoverDurations, 'Hover Duration');
+
+    // 2. X Position Distribution
+    createChart(document.getElementById('chart2'), 'bar', dates, xPositions, 'X Positions');
+
+    // 3. Y Position Distribution
+    createChart(document.getElementById('chart3'), 'bar', dates, yPositions, 'Y Positions');
+
+    // 4. Button Click Frequency
+    const buttonCounts = buttons.reduce((acc, button) => {
+      acc[button] = (acc[button] || 0) + 1;
+      return acc;
+    }, {});
+    createChart(document.getElementById('chart4'), 'pie', Object.keys(buttonCounts), Object.values(buttonCounts), 'Button Clicks');
+
+    // 5. Event Type Frequency
+    const eventCounts = eventTypes.reduce((acc, eventType) => {
+      acc[eventType] = (acc[eventType] || 0) + 1;
+      return acc;
+    }, {});
+    createChart(document.getElementById('chart5'), 'doughnut', Object.keys(eventCounts), Object.values(eventCounts), 'Event Types');
+
+    // 6. Hover Duration Distribution
+    createChart(document.getElementById('chart6'), 'scatter', dates, hoverDurations, 'Hover Duration Scatter');
+
+  }
+  </script>
+</body>
+</html>
